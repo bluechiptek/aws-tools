@@ -75,7 +75,23 @@ Parameters:
     AllowedPattern: '((\d{1,3})\.){3}\d{1,3}/\d{1,2}'
     Default: 10.192.202.0/24
 
+  FlowLogsRetentionDays:
+    Description: Number of days to retain VPC Flow Logs
+    Type: Number
+    Default: 14
+    AllowedValues: [1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653]
+
+  FlowLogsAction:
+    Description: Actions that are recorded by VPC Flow Logs
+    Type: String
+    Default: REJECT
+    AllowedValues:
+      - ACCEPT
+      - REJECT
+      - ALL
+
 Resources:
+# VPC
   Vpc:
     Type: AWS::EC2::VPC
     Properties:
@@ -96,6 +112,47 @@ Resources:
     Properties:
       InternetGatewayId: !Ref InternetGateway
       VpcId: !Ref Vpc
+
+# Flow Logs
+  FlowLogsLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub ${VpcName}-flowlogs
+      RetentionInDays: !Ref FlowLogsRetentionDays
+
+  FlowLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - vpc-flow-logs.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+      - PolicyName: flowlogs-policy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                - logs:DescribeLogGroups
+                - logs:DescribeLogStreams
+              Resource: !GetAtt FlowLogsLogGroup.Arn
+              
+  FlowLogs:
+    Type: AWS::EC2::FlowLog
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt FlowLogsRole.Arn
+      LogGroupName: !Ref FlowLogsLogGroup
+      ResourceId: !Ref Vpc
+      ResourceType: VPC
+      TrafficType: !Ref FlowLogsAction
       
 # Public Subnets
   PublicSubnetRouteTable:
