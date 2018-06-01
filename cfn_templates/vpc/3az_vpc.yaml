@@ -446,17 +446,17 @@ Outputs:
   NatSubnet0Id:
     Value: !Ref NatSubnet0
     Export:
-      Name: !Sub ${VpcName}-natSubnet0Id
+      Name: !Sub ${VpcName}-NatSubnet0Id
       
   NatSubnet1Id:
     Value: !Ref NatSubnet1
     Export:
-      Name: !Sub ${VpcName}-natSubnet1Id
+      Name: !Sub ${VpcName}-NatSubnet1Id
       
   NatSubnet2Id:
     Value: !Ref NatSubnet2
     Export:
-      Name: !Sub ${VpcName}-natSubnet2Id
+      Name: !Sub ${VpcName}-NatSubnet2Id
       
   PrivateSubnet0Id:
     Value: !Ref PrivateSubnet0
