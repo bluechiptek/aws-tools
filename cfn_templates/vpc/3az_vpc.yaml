@@ -233,7 +233,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicSubnetRouteTable
-      SubnetId: !Ref PublicSubnet0
+      SubnetId: !Ref PublicSubnet1
           
   PublicSubnet2: 
     Type: AWS::EC2::Subnet
@@ -265,7 +265,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicSubnetRouteTable
-      SubnetId: !Ref PublicSubnet0
+      SubnetId: !Ref PublicSubnet2
 
 
 # Nat Subnets
@@ -384,7 +384,7 @@ Resources:
         - Key: Name 
           Value: !Sub ${VpcName}-private0
           
-  PrivateSubnetRouteTableAssociation:
+  PrivateSubnet0RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateSubnetRouteTable
@@ -400,7 +400,7 @@ Resources:
         - Key: Name 
           Value: !Sub ${VpcName}-private1
           
-  PrivateSubnetRouteTableAssociation:
+  PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateSubnetRouteTable
@@ -416,7 +416,7 @@ Resources:
         - Key: Name 
           Value: !Sub ${VpcName}-private2
                 
-  PrivateSubnetRouteTableAssociation:
+  PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateSubnetRouteTable
