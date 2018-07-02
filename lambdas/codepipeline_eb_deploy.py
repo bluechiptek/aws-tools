@@ -1,10 +1,13 @@
+import json
 import logging
+
+
 import boto3
 
 logger = logging.getLogger(__name__)
 
 
-def get_revision_summary(pipeline_name, revision_id):
+def get_artifact_summary(pipeline_name, revision_id):
     """Retrurns revisionSummary associated with revision_id
 
     Gets list of pipeline executions and evaluates each one until it finds
@@ -33,13 +36,18 @@ def get_revision_summary(pipeline_name, revision_id):
 
 def lambda_handler(event, context):
     codepipeline = boto3.client('codepipeline')
+    beanstalk = boto3.client('elasticbeanstalk')
     job_id = event['CodePipeline.job']['id']
     job_data = event['CodePipeline.job']['data']
+    job_config = job_data['actionConfiguration']['configuration']
+    # Check to make sure user_params exist and are JSON, if not raise and exit
+    user_params = json.loads(job_config['UserParameters'])
     # Check to make sure only a single artifact
     artifact_revision_id = job_data['inputArtifacts'][0]['revision']
     get_job_details = codepipeline.get_job_details(jobId=job_id)
     pipeline_context = get_job_details['jobDetails']['data']['pipelineContext']
     pipeline_name = pipeline_context['pipelineName']
-    print(artifact_revision_id)
-    print(pipeline_name)
+    artifact_summary = get_artifact_summary(pipeline_name,
+                                            artifact_revision_id)
+    print(user_params)
     codepipeline.put_job_success_result(jobId=job_id)
