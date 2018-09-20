@@ -1,89 +1,67 @@
-# String functions
+# GenerateSecret CloudFormation Macro
 
-Provides string transformation utility functions.
+Transform that will provide a reference to the latest version of a SecureString in AWS Systems Manager Parameter Store. If a SecureString does not exist then one will be generated and reference to the new SecureString will be provided.
 
 ## Basic Usage
 
-Place the transform where you would like the output to be placed and provide the input string as the value for the
-InputString Parameter. The example below shows converting an input parameter to lower case and setting it as the value
-for a tag on an s3 bucket.
+Place the transform where you would like the reference to the SecureString to be included in the template. Note that a reference to a SecureString can only be used be [specific resources](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/dynamic-references.html#template-parameters-dynamic-patterns-resources).
+
+The example below shows using a SecureString reference to set the MasterUserPassword of an RDS instance.
 
 ```yaml
+AWSTemplateFormatVersion: 2010-09-09
 Parameters:
-  InputString:
-    Default: "This is a test input string"
+  DbPasswordParam:
     Type: String
+    Default: /Dev/Db/admin
 Resources:
-  S3Bucket:
-    Type: "AWS::S3::Bucket"
+  DB:
+    Type: AWS::RDS::DBInstance
     Properties:
-      Tags:
-        - Key: Upper
-          Value:
-            'Fn::Transform':
-             - Name: 'String'
-               Parameters:
-                 InputString: !Ref InputString
-                 Operation: Upper
+      AllocatedStorage: 20
+      DBInstanceClass: db.t2.small
+      Engine: MySQL
+      MasterUsername: admin
+      MasterUserPassword:
+        Fn::Transform:
+          - Name: GenerateSecret
+            Parameters:
+              SecretName: !Ref DbPasswordParam
+              Exclude:
+                - '"'
+                - '/'
+                - '@'
 ```
 
-## Available Operations
+In this case if the SecureString `/Dev/Db/admin` exists then the a reference to latest version will be provided. If `/Dev/Db/admin` does not exist, then a new SecureString will be created and a reference to that SecureString will be provided.
 
-### Upper
+## Parameters
+The only required parameter is `SecretName`, which with be used as the SecureString name stored in the AWS Systems Manager Parameter Store. In addition to `SecretName` the other optional parameters can be provided.
 
-Return a copy of the string with all the cased characters converted to uppercase.
+### Length - Default: 16
 
-### Lower
+The number of characters that will be used to make the SecureString. By default all characters types will be used, so this needs to be 4 or greater.
 
-Return a copy of the string with all the cased characters [4] converted to lowercase.
+### Lower - Default: True
 
-### Capitalize
+Boolean if lower case letters should be included in the SecureString.
 
-Return a copy of the string with its first character capitalized and the rest lowercased.
+### Upper - Default: True
 
-### Title
+Boolean if lower case letters should be included in the SecureString.
 
-Return a titlecased version of the string where words start with an uppercase character and the remaining characters
-are lowercase.
+### Number - Default: True
 
-### SwapCase
+Boolean if numbers should be included in the SecureString.
 
-Return a copy of the string with uppercase characters converted to lowercase and vice versa.
+### Special - Default: True
 
-### Strip
+Boolean if special characters (i.e. punctuation) should be included in the SecureString.
 
-Return a copy of the string with the leading and trailing characters removed. The `Chars` parameter is a string
-specifying the set of characters to be removed. If omitted default is to remove whitespace. The Chars argument is not a
-prefix or suffix; rather, all combinations of its values are stripped.
+### Exclude - Default: None
 
-#### Additional Parameters
+List of characters that should not be included in the SecureString.
 
-*Chars*: [optional] characters to strip from beginning and end of string
+## Warranty
+This is proof of concept code used to showcase CloudFormation Macros and System Manager SecureString references in CloudFormation. This code generates a string that can be used as a password, but there is no guarentee this string is generated in a secure manner and sufficient to meet your needs. It's recommended that you evaluate the `generate_secret` included in the Lambda Function to determine if it satisfactory for your use case.
 
-### Replace
-
-Return a copy of the string with all occurrences of substring `Old` replaced by `New`.
-
-#### Additional Parameters
-
-*Old*: [required] sub-string to search for
-
-*New*: [required] string to replace Old with
-
-### MaxLength
-
-Return a copy of the string with a maximum length as specified by the `Length` parameter. Default is to strip
-characters from the end of the string.
-
-#### Additional Parameters
-
-*Length*: [required] maximum length of string
-
-*StripFrom*: [optional] specifying `Left` will strip characters from the beginning of the string, `Right` from the end
-(default)
-
-## Author
-
-[Jay McConnell](https://github.com/jaymccon)  
-Partner Solutions Architect  
-Amazon Web Services
