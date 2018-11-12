@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  Bucket:
+    Type: String
+    Default: bct-aws-tools-graffiti-monkey
+  CodeArtifact:
+    Type: String
+    MinLength: 1
+  InstanceTagsToBeSet:
+    Type: String
+    MinLength: 1
+    Default: 'instanceTagsToBeSet'
+  VolumeTagsToBeSet:
+    Type: String
+    MinLength: 1
+    Default: 'volumeTagsToBeSet'
+  InstanceTagsToPropagate:
+    Type: String
+    MinLength: 1
+    Default: 'instanceTagsToPropagate'
+  VolumeTagsToPropagate:
+    Type: String
+    MinLength: 1
+    Default: 'volumeTagsToPropagate'
+  SnapshotTagsToBeSet:
+    Type: String
+    MinLength: 1
+    Default: 'volumeTagsToPropagate'
+  InstanceFilter:
+    Type: String
+    MinLength: 1
+    Default: ' '
+  Region:
+    Type: String
+    MinLength: 1
+    Default: us-west-2
+  SnsArn:
+    Type: String
+    MinLength: 1
+    Default: ' '
+
+Resources:
+  GraffitiMonkey:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python2.7
+      Environment:
+        Variables:
+          REGION: !Sub ${Region}
+          SNS_ARN: !Sub ${SnsArn}
+          INSTANCE_TAGS_TO_PROPAGATE: !Sub ${InstanceTagsToPropagate}
+          VOLUME_TAGS_TO_PROPAGATE: !Sub ${VolumeTagsToPropagate}
+          VOLUME_TAGS_TO_BE_SET: !Sub ${VolumeTagsToBeSet}
+          SNAPSHOT_TAGS_TO_BE_SET: !Sub ${SnapshotTagsToBeSet}
+          INSTANCE_FILTER: !Sub ${InstanceFilter}
+
+      Handler: "service.handler"
+      Code:
+        S3Bucket: !Ref Bucket
+        S3Key: !Sub graffiti-monkey/${CodeArtifact}
+      '''
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref MyVpcSg
+        SubnetIds: !Split [",", !ImportValue Default-ProtectedNetworkList]
+      '''
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: AWSLambdaVPCAccessExecutionRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - ec2:CreateNetworkInterface
+            - ec2:DescribeNetworkInterfaces
+            - ec2:DeleteNetworkInterface
+            Resource: "*"
+
+  GraffitiMonkeyEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${AWS::StackName}-event-rule"
+      Description: "CloudWatch Event Rule that triggers Graffiti Monkey,
+        by emitting an event every day."
+      ScheduleExpression: rate(1 day)
+      State: DISABLED
+      Targets:
+        - Arn: !GetAtt GraffitiMonkey.Arn
+          Id: !Ref GraffitiMonkey
+
+  GraffitiMonkeyPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - GraffitiMonkey
+      - GraffitiMonkeyEventRule
+    Properties:
+      FunctionName: !GetAtt GraffitiMonkey.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt GraffitiMonkeyEventRule.Arn
