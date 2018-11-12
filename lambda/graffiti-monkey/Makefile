@@ -9,7 +9,7 @@ build:
 	zip -q -r "build/graffiti-monkey-${DATE}.zip" . -x build\*
 	$(PIP_INSTALL) -q -Ur requirements.txt -t build/lib/
 	cd build/lib/ && \
-		zip -r ../graffiti-monkey.zip .
+		zip -r ../graffiti-monkey-${DATE}.zip .
 	aws s3 --profile ${PROFILE} cp "build/graffiti-monkey-${DATE}.zip" \
 		"s3://${BUCKET}/graffiti-monkey/"
 	make clean
