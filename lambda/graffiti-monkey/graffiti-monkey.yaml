@@ -41,7 +41,7 @@ Parameters:
     Default: ' '
 
 Resources:
-  graffitiMonkey:
+  GraffitiMonkey:
     Type: AWS::Lambda::Function
     Properties:
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -95,3 +95,25 @@ Resources:
             - ec2:DeleteNetworkInterface
             Resource: "*"
 
+  GraffitiMonkeyEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${AWS::StackName}-event-rule"
+      Description: "CloudWatch Event Rule that triggers Graffiti Monkey,
+        by emitting an event every day."
+      ScheduleExpression: rate(1 day)
+      State: DISABLED
+      Targets:
+        - Arn: !GetAtt GraffitiMonkey.Arn
+          Id: !Ref GraffitiMonkey
+
+  GraffitiMonkeyPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - GraffitiMonkey
+      - GraffitiMonkeyEventRule
+    Properties:
+      FunctionName: !GetAtt GraffitiMonkey.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt GraffitiMonkeyEventRule.Arn

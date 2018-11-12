@@ -14,6 +14,11 @@ make build
 
 ### AWS Lambda Deployment via Cloudformation
 
+Create a CFN Stack for the Lambda Function and Event Rule.
+Defaults to disabled, scheduled once per day.
+Switch the event trigger on via GUI after verification. 
+
+
 ```sh
 export REGION=us-west-2
 export SNS_ARN=mySnsArn
