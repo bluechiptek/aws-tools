@@ -1,4 +1,4 @@
-## BUILD LAMBDA ARTIFACT AND UPLOAD TO S3
+## Build Lambda Artifact and Upload To S3
 
 Makefile takes care of everything for you. 
 It also cleans up after the upload is successful. 
@@ -12,7 +12,7 @@ export PROFILE=bct_sandbox
 make build
 ```
 
-### AWS LAMBDA DEPLOYMENT VIA CLOUDFORMATION
+### AWS Lambda Deployment via Cloudformation
 
 ```sh
 export REGION=us-west-2
@@ -22,7 +22,7 @@ aws cloudformation deploy \
 	--profile bct_sandbox
 	--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
 	--stack-name ${STACK_NAME} \
-	--template-file graffiti-monkey.yml \
+	--template-file graffiti-monkey.yaml \
 	--parameter-overrides \
 	"Bucket=${BUCKET}"
 	"Region=${REGION}"
@@ -32,8 +32,10 @@ aws cloudformation deploy \
 
 Environment variables for the Graffiti Monkey Lambda Function itself can be set via command line, a parameters file, or by editing the Cloudformation template parameters in the yaml. 
 
+```sh
 INSTANCE_TAGS_TO_PROPAGATE
 VOLUME_TAGS_TO_PROPAGATE
 VOLUME_TAGS_TO_BE_SET
 SNAPSHOT_TAGS_TO_BE_SET
 INSTANCE_FILTER
+```
