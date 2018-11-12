@@ -19,7 +19,7 @@ export REGION=us-west-2
 export SNS_ARN=mySnsArn
 
 aws cloudformation deploy \
-	--profile bct_sandbox
+	--profile bct_sandbox \
 	--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
 	--stack-name ${STACK_NAME} \
 	--template-file graffiti-monkey.yaml \
@@ -27,7 +27,7 @@ aws cloudformation deploy \
 	"Bucket=${BUCKET}"
 	"Region=${REGION}"
 	"SnsArn=${SNS_ARN}"
-	"CodeArtifact=graffiti-monkey-date-from-build.zip" \
+	"CodeArtifact=graffiti-monkey-date-from-build.zip"
 ```
 
 Environment variables for the Graffiti Monkey Lambda Function itself can be set via command line, a parameters file, or by editing the Cloudformation template parameters in the yaml. 
