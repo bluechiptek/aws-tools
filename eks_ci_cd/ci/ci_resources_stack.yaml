@@ -1,14 +1,25 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Role to be used by CI CodeBuild Projects
+Description: Resources to be used by CI CodeBuild Projects
+Parameters:
+  DevHelmChartRepoBucketName:
+    Type: String
+    Default: bct-b4cs-dev-helm-repo
 Resources:
   DevHelmChartRepoBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: bct-b4cs-dev-helm-repo
+      BucketName: !Sub ${DevHelmChartRepoBucketName}
       LifecycleConfiguration:
         Rules:
           - ExpirationInDays: 45
             Status: Enabled
+
+  DevHelmChartRepoBucketParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "/Build/Ci/HelmChartRepoUrl"
+      Type: String
+      Value: !Sub s3://${DevHelmChartRepoBucket}/
 
   CiCodeBuildRole:
     Type: AWS::IAM::Role
@@ -31,8 +42,8 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource:
-                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}*
-                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}*:*
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/*:*
               - Effect: Allow
                 Action:
                   - s3:Get*
@@ -54,3 +65,10 @@ Resources:
                   - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/Build/*
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
+
+  CiCodeBuildRoleParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "/Build/Ci/CodeBuildRoleArn"
+      Type: String
+      Value: !Sub ${CiCodeBuildRole.Arn}

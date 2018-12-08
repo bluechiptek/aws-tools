@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Resources to be used by CI CodeBuild Projects
+Parameters:
+  CiCodeBuildRoleArn:
+    Description: Referecne to a Parameter Store String that will be used as the CodeBuildRoleArn
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/Build/Ci/CodeBuildRoleArn"
+  BuildContainerUrl:
+    Description: Referecne to a Parameter Store String that will be used as the BuildContainerUrl
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/Build/CodeBuild/Image"
+  EksClusterNameParam:
+    Description: Path of the EksClusterName Parameter Store String that will be passed to CodeBuild
+    Type: String
+    Default: "/Build/Dev/EksClusterName"
+  HelmChartRepoUrlParam:
+    Description: Path of the HelmChartRepoUrl Parameter Store String that will be passed to CodeBuild
+    Type: String
+    Default: "/Build/Ci/HelmChartRepoUrl"
+  GitHubRepoUrl:
+    Type: String
+  BuildSpecPath:
+    Type: String
+Resources:
+# You need to connect CodeBuild to Github prior to building this stack.
+# See source-location section for Github on this page https://docs.aws.amazon.com/codebuild/latest/userguide/create-project.html#create-project-cli
+  CiCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${AWS::StackName}
+      Description: Performs CI for containerized services
+      ServiceRole: !Sub ${CiCodeBuildRoleArn}
+      Source:
+        Type: GITHUB
+        GitCloneDepth: 0
+        BuildSpec: !Sub ${BuildSpecPath}
+        Location: !Sub ${GitHubRepoUrl}
+        Auth:
+          Type: OAUTH
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: !Sub ${BuildContainerUrl}
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: ECR_URL
+            Type: PLAINTEXT
+            Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com
+          - Name: EKS_CLUSTER_NAME
+            Type: PARAMETER_STORE
+            Value: !Sub ${EksClusterNameParam}
+          - Name: HELM_CHART_REPO_URL
+            Type: PARAMETER_STORE
+            Value: !Sub ${HelmChartRepoUrlParam}
+      TimeoutInMinutes: 30
+      Triggers:
+        Webhook: true
+      Artifacts:
+        Type: NO_ARTIFACTS
