@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Role to be used by CI CodeBuild Projects
+Resources:
+  DevHelmChartRepoBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: bct-b4cs-dev-helm-repo
+      LifecycleConfiguration:
+        Rules:
+          - ExpirationInDays: 45
+            Status: Enabled
+
+  CiCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: buildPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}*
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}*:*
+              - Effect: Allow
+                Action:
+                  - s3:Get*
+                  - s3:Put*
+                  - s3:List*
+                Resource:
+                  - !Sub ${DevHelmChartRepoBucket.Arn}
+                  - !Sub ${DevHelmChartRepoBucket.Arn}/*
+              - Effect: Allow
+                Action:
+                  - eks:Describe*
+                  - eks:List*
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                Resource:
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/Build/*
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser

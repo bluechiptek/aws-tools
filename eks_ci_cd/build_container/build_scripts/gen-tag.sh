@@ -31,7 +31,7 @@ if [ ${CURRENT_SHA} != ${TAG_SHA} ] ; then
         TAG="dev-${CURRENT_SHA_SHORT}"
         ;;
         chart)
-        TAG="${LATEST_TAG}+${CURRENT_SHA_SHORT}"
+        TAG="${LATEST_TAG}-dev+${CURRENT_SHA_SHORT}"
         ;;
         latest)
         TAG="false"
