@@ -30,7 +30,7 @@ if [ -z ${TAG} ] ; then
 fi
 
 if [ -z ${PARAM_KEY} ] ; then
-    PARAM_KEY="/build/codebuild/image"
+    PARAM_KEY="/Build/Codebuild/Image"
 fi
 
 REGION=$(aws configure get region)
