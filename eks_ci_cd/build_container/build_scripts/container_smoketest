@@ -8,7 +8,7 @@ TEST_TIME=10
 
 echo "Smoketesting ${CONTAINER}"
 #Start container with smoketest env var set
-CONTAINER_ID=$(docker run -d --env ENV=smoketest ${CONTAINER})
+CONTAINER_ID=$(docker run -d --env MODE=smoketest ${CONTAINER})
 echo "Started container id ${CONTAINER_ID}"
 
 ELAPSED_TIME=0
