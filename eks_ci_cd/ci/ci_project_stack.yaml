@@ -33,10 +33,10 @@ Resources:
       Source:
         Type: GITHUB
         GitCloneDepth: 0
-        BuildSpec: !Sub ${BuildSpecPath}
         Location: !Sub ${GitHubRepoUrl}
         Auth:
           Type: OAUTH
+        BuildSpec: !Sub ${BuildSpecPath}
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL

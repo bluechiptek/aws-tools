@@ -1,0 +1,59 @@
+#!/bin/bash
+
+CONTAINER=${1}
+
+# TEST_TIME is the number of seconds to watch container to make sure it
+# stays running or exits 0
+TEST_TIME=10
+
+echo "Smoketesting ${CONTAINER}"
+#Start container with smoketest env var set
+CONTAINER_ID=$(docker run -d --env ENV=smoketest ${CONTAINER})
+echo "Started container id ${CONTAINER_ID}"
+
+ELAPSED_TIME=0
+TEST_RESULTS="Unknown"
+
+while [ ${ELAPSED_TIME} -lt ${TEST_TIME} ]; do
+    STATE=$(docker inspect --format='{{.State.Status}}' ${CONTAINER_ID})
+    echo "Container ${CONTAINER_ID} state is ${STATE}"
+    case ${STATE} in
+        created)
+            # We don't expect to end up in this state,
+            # but probably not a fatal error if short lived.
+            ELAPSED_TIME=$((${ELAPSED_TIME} + 1))
+            sleep 1
+        ;;
+        running)
+            ELAPSED_TIME=$((${ELAPSED_TIME} + 5))
+            TEST_RESULTS="Good"
+            sleep 5
+        ;;
+        exited)
+            EXIT_CODE=$(docker inspect --format='{{.State.ExitCode}}' ${CONTAINER_ID})
+            if [ ${EXIT_CODE} -eq 0 ]; then
+                TEST_RESULTS="Good"
+                break
+            else
+                TEST_RESULTS="Bad"
+                break
+            fi
+        ;;
+    esac
+done
+
+echo "Smoketest results were ${TEST_RESULTS}"
+
+if [ ${TEST_RESULTS} != "Good" ]; then
+    docker inspect ${CONTAINER_ID}
+    docker logs ${CONTAINER_ID}
+    exit 1
+fi
+
+STATE=$(docker inspect --format='{{.State.Status}}' ${CONTAINER_ID})
+if [ ${STATE} == 'running' ]; then
+    echo "Killing container"
+    docker kill ${CONTAINER_ID}
+fi
+
+
