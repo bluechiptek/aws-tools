@@ -1,0 +1,22 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "integration-test-job.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "integration-test-job.name" . }}
+    helm.sh/chart: {{ include "integration-test-job.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  template:
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        env:
+          - name: MODE
+            value: {{ .Values.mode }}
+          - name: TEST_ENDPOINT
+            value: {{ .Values.testEndpoint }}
+      restartPolicy: Never
+  backoffLimit: {{ .Values.job.backoffLimit }}

@@ -1,0 +1,21 @@
+# Default values for integration-test-job.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+
+mode: integrationtest
+# testEndpoint should always be overridden with the endpoint to be used for the tests
+testEndpoint: undefined
+
+image:
+  # The repository should always be overridden with the correct container
+  # to use for testing
+  repository: index.docker.io/kovetskiy/stub-exit-1
+  tag: latest
+  pullPolicy: IfNotPresent
+
+job:
+  backoffLimit: 0
+
+nameOverride: ""
+fullnameOverride: ""
