@@ -77,3 +77,4 @@ Resources:
       Name: "/Build/Ci/CodeBuildRoleArn"
       Type: String
       Value: !Sub ${CiCodeBuildRole.Arn}
+
