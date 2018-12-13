@@ -63,6 +63,11 @@ Resources:
                   - ssm:GetParameters
                 Resource:
                   - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/Build/*
+              - Effect: Allow
+                Action:
+                  - codebuild:StopBuild
+                Resource:
+                  - "*"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
 

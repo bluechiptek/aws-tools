@@ -12,8 +12,8 @@ while [[ $# -gt 0 ]] ; do
         TAG_TYPE=chart
         shift
         ;;
-        --latest)
-        TAG_TYPE=latest
+        --release)
+        TAG_TYPE=release
         shift
         ;;
     esac
@@ -33,13 +33,13 @@ if [ ${CURRENT_SHA} != ${TAG_SHA} ] ; then
         chart)
         TAG="${LATEST_TAG}-dev+${CURRENT_SHA_SHORT}"
         ;;
-        latest)
+        release)
         TAG="false"
         ;;
     esac
 else
     case ${TAG_TYPE} in
-        latest)
+        release)
         TAG="true"
         ;;
         *)
