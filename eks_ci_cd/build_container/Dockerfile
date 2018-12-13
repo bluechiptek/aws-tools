@@ -2,7 +2,7 @@ FROM docker:latest
 
 RUN apk add --no-cache bash python3 curl openssl git iptables
 RUN pip3 install --upgrade pip
-RUN pip3 install awscli
+RUN pip3 install awscli dpath pyyaml
 RUN curl -o /usr/local/bin/kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/kubectl \
     && chmod +x /usr/local/bin/kubectl
 RUN curl -o /usr/local/bin/aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.10.3/2018-07-26/bin/linux/amd64/aws-iam-authenticator \

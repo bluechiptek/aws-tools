@@ -1,0 +1,48 @@
+version: 0.2
+phases:
+  install:
+    commands:
+    # Determine if this run is for a release, if so then just exit 0
+      - if [ $(gen-tag --release) = "false" ] ; then echo "Not a Release Commit, CD will not run" ; aws codebuild stop-build --id ${CODEBUILD_BUILD_ID} ; fi
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay &>/var/log/docker.log &
+      - timeout -t 15 sh -c "until docker info >/dev/null 2>&1; do echo .; sleep 1; done"
+  pre_build:
+    commands:
+      - $(aws ecr get-login --no-include-email --region us-west-2)
+      - helm repo add s3-repo ${HELM_CHART_REPO_URL}
+      - aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME}
+      - SHA_SHORT=$(git rev-parse --short=8 HEAD)
+      - SERVICE_NAME=${PWD##*/}
+      - CONTAINER_TAG=$(gen-tag --container)
+      - CHART_TAG=$(gen-tag --chart)
+      - CONTAINER_URL=${ECR_URL}/${SERVICE_NAME}:${CONTAINER_TAG}
+  build:
+    commands:
+    # Docker file linter placeholder - https://github.com/hadolint/hadolint
+      - echo "Linting Helm Chart"
+      - helm lint .
+      - echo "Rednering Helm Chart k8s manifests and performing dry-run"
+      - helm template . | kubectl apply --dry-run -f -
+      - echo "Running Unit Tests"
+      - ./tests/unit_test.sh
+      - echo "Building container ${ECR_URL}/${SERVICE_NAME}:${CONTAINER_TAG}"
+      - docker build . -t ${ECR_URL}/${SERVICE_NAME}:${CONTAINER_TAG}
+      - container_smoketest ${ECR_URL}/${SERVICE_NAME}:${CONTAINER_TAG}
+      - echo "Pushing container ${ECR_URL}/${SERVICE_NAME}:${CONTAINER_TAG}"
+      - docker push ${ECR_URL}/${SERVICE_NAME}:${CONTAINER_TAG}
+      - echo "Packaging Chart version ${CHART_TAG}"
+      - helm package --version ${CHART_TAG} --app-version ${CHART_TAG} .
+      - echo "Pushing Charrt version ${CHART_TAG}"
+      # Since "+SHA" part of the version isn't considered by SymVer then we need to include --force
+      # This is a good reason to have a separate dev and prod chart repos (and maybe ECR).
+      # --force wouldn't be included when pushing to chart prod repo.
+      - helm s3 push --force ./${SERVICE_NAME}-${CHART_TAG}.tgz s3-repo
+      - helm install s3-repo/${SERVICE_NAME} --name ${SERVICE_NAME}-${SHA_SHORT} --version ${CHART_TAG} --set image.tag=${CONTAINER_TAG}
+      # Ideally have a script that waits until the service states it's ready, for now will just wait
+      - sleep 10
+      - helm install s3-repo/integration-test-job --name ${SERVICE_NAME}-${SHA_SHORT}-integration-tests --set testEndpoint=${SERVICE_NAME}-${SHA_SHORT} --set image.repository=${ECR_URL}/${SERVICE_NAME} --set image.tag=${CONTAINER_TAG}
+      # Again need to wait for the job to finish, just have a dumb wait for now
+      - sleep 5
+      - kubectl logs --selector=job-name=${SERVICE_NAME}-${SHA_SHORT}-integration-tests-integration-test-job
+      # Need script to verify that the integration tests completed successfully
+      - helm delete ${SERVICE_NAME}-${SHA_SHORT} ${SERVICE_NAME}-${SHA_SHORT}-integration-tests

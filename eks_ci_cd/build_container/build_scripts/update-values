@@ -1,0 +1,58 @@
+#!/usr/bin/env python3
+
+import argparse
+import os
+import sys
+import yaml
+
+import dpath
+
+def parse_args(arguments):
+    parser = argparse.ArgumentParser(
+        description="Updates YAML file, intended to be used with Helm Chart "
+                    "values.yaml. "
+    )
+
+    parser.add_argument('--path',
+                        help="path to the values.yaml. "
+                             "Defaults to ./values.yaml",
+                        default="./values.yaml"
+                        )
+    parser.add_argument('--key',
+                        required=True,
+                        help="A slash delimited path to a key in the "
+                             "values.yaml that should be updated. "
+                             "i.e. (/image/tag to update the tag to use for "
+                             "the container image.)"
+                        )
+    parser.add_argument('--value',
+                        required=True,
+                        help="Value to set for the specified key")
+
+    return parser.parse_args(args=arguments)
+
+
+def read_values_file(file_path):
+    with open(file_path) as values_file:
+        values = yaml.load(values_file)
+    return values
+
+
+def write_values_file(values, file_path):
+    with open(file_path, 'w') as values_file:
+        yaml.dump(values, values_file, default_flow_style=False)
+
+
+def update_values(values, key, new_value):
+    dpath.util.set(values, key, new_value)
+
+
+def main(arguments=sys.argv[1:]):
+    args = parse_args(arguments)
+    values = read_values_file(args.path)
+    update_values(values, args.key, args.value)
+    write_values_file(values, args.path)
+
+if __name__ == "__main__":
+    main()
+
